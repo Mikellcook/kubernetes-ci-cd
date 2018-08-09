@@ -1,4 +1,4 @@
-node {
+node('jenkins-docker-slave') {
 
     checkout scm
 
@@ -11,9 +11,10 @@ node {
     registryHost = "registry.sensa.net:5000/"
     imageName = "${registryHost}${appName}:${tag}"
     env.BUILDIMG=imageName
+  
 
     stage "Build"
-    
+
         sh "docker build -t ${imageName} -f applications/hello-kenzan/Dockerfile applications/hello-kenzan"
     
     stage "Push"
