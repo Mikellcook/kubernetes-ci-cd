@@ -1,10 +1,10 @@
-def tag = readFile('commit-id').replace("\n", "").replace("\r", "")
-def appName = "hello-kenzan"
-def registryHost = "registry.sensa.net:5000/"
-def imageName = "${registryHost}${appName}:${tag}"
-def BUILDIMG=imageName
-
 node('jenkins-docker-slave') {
+
+    tag = readFile('commit-id').replace("\n", "").replace("\r", "")
+    appName = "hello-kenzan"
+    registryHost = "registry.sensa.net:5000/"
+    imageName = "${registryHost}${appName}:${tag}"
+    env.BUILDIMG=imageName
 
     stage "Pull"
 
