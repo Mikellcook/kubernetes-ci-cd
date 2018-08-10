@@ -21,8 +21,11 @@ node('jenkins-docker-slave') {
 
         sh "docker push ${imageName}"
 
-    stage "Deploy"
+    stage ("Deploy") { 
+      container("jenkins-kube-slave") {
 
         sh "sed 's#registry.sensa.net:5000/hello-kenzan:latest#'$BUILDIMG'#' applications/hello-kenzan/k8s/deployment.yaml | kubectl apply -f -"
         sh "kubectl rollout status deployment/hello-kenzan"
+      }
+   }
 }
