@@ -1,31 +1,49 @@
-node('jenkins-docker-slave') {
+podTemplate(label: 'slave', containers: [
+    containerTemplate(name: 'jenkins-slave'),
+    containerTemplate(name: 'jenkins-docker-slave'),
+    containerTemplate(name: 'jenkins-kube-slave'),
+    containerTemplate(name: 'jenkins-helm-slave')
+  ])
 
-    checkout scm
+node('slave') {
 
-    env.DOCKER_API_VERSION="1.23"
-    
-    sh "git rev-parse --short HEAD > commit-id"
+  tag = readFile('commit-id').replace("\n", "").replace("\r", "")
+  appName = "hello-kenzan"
+  registryHost = "registry.sensa.net:5000/"
+  imageName = "${registryHost}${appName}:${tag}"
+  env.BUILDIMG=imageName
 
-    tag = readFile('commit-id').replace("\n", "").replace("\r", "")
-    appName = "hello-kenzan"
-    registryHost = "registry.sensa.net:5000/"
-    imageName = "${registryHost}${appName}:${tag}"
-    env.BUILDIMG=imageName
-  
+  stage ("Pull") {
+    container("jenkins-slave") {
 
-    stage "Build"
+      checkout scm
+      sh "git rev-parse --short HEAD > commit-id"
 
-        sh "docker build -t ${imageName} -f applications/hello-kenzan/Dockerfile applications/hello-kenzan"
-    
-    stage "Push"
+    }
+  }
+  stage ("Build") {
+    container("jenkins-docker-slave") {
 
-        sh "docker push ${imageName}"
+      sh "docker build -t ${imageName} -f applications/hello-kenzan/Dockerfile applications/hello-kenzan"
 
-    stage ("Deploy") { 
+    }
+  }
+  stage ("Push")  {
+    container("jenkins-docker-slave") {
+
+      sh "docker push ${imageName}"
+
+    }
+  }
+  stage ("Deploy") {
       container("jenkins-kube-slave") {
 
         sh "sed 's#registry.sensa.net:5000/hello-kenzan:latest#'$BUILDIMG'#' applications/hello-kenzan/k8s/deployment.yaml | kubectl apply -f -"
         sh "kubectl rollout status deployment/hello-kenzan"
+        sh "sleep 5"
+        sh "kubectl rollout status deployment/hello-kenzan"
+
       }
    }
 }
+
