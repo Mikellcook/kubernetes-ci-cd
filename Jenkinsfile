@@ -1,6 +1,5 @@
 node('jenkins-docker-slave') {
     
-    logstashSend failBuild: false, maxLines: -1
     tag = readFile('commit-id').replace("\n", "").replace("\r", "")
     appName = "hello-kenzan"
     registryHost = "registry.sensa.net:5000/"
